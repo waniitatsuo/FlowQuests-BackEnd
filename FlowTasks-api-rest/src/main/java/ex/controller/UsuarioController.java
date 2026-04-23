@@ -2,73 +2,89 @@ package ex.controller;
 
 import ex.model.Usuario;
 import ex.service.UsuarioService;
-import ex.dto.UsuarioPublicoDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/usuarios")
 @CrossOrigin("*")
 public class UsuarioController {
 	
+    // Agora injetamos o SERVICE, e não mais o Repository ou o PasswordEncoder!
     @Autowired
     private UsuarioService usuarioService;
 
-    // Login (Público)
+    // Caso de Uso: Se Registrar
+    @PostMapping
+    public ResponseEntity<Usuario> criar(@RequestBody Usuario novoUsuario) {
+        Usuario usuarioSalvo = usuarioService.registrarUsuario(novoUsuario);
+        return ResponseEntity.status(HttpStatus.CREATED).body(usuarioSalvo);
+    }
+
+    // Caso de Uso: Criar conta de administrador
+    @PostMapping("/admin")
+    public ResponseEntity<Usuario> criarAdmin(@RequestBody Usuario novoAdmin) {
+        Usuario adminSalvo = usuarioService.registrarAdministrador(novoAdmin);
+        return ResponseEntity.status(HttpStatus.CREATED).body(adminSalvo);
+    }
+
+    // Caso de Uso: Logar no sistema
     @PostMapping("/login")
     public ResponseEntity<Usuario> login(@RequestBody Usuario dadosLogin) {
         Usuario usuarioLogado = usuarioService.realizarLogin(dadosLogin.getEmail(), dadosLogin.getSenha());
-        return usuarioLogado != null ? ResponseEntity.ok(usuarioLogado) : ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        if (usuarioLogado != null) {
+            return ResponseEntity.ok(usuarioLogado); // 200 - OK
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // 401 - Falha no login ou conta inativa
+        }
     }
 
-    // Carregar dados para o Dashboard (Protegido por X-Usuario-Id)
-    @GetMapping("/geral/meu-perfil")
-    public ResponseEntity<?> carregarMeuPerfil(@RequestHeader("X-Usuario-Id") Long usuarioId) {
+    // Endpoints de Moderação
+    @PutMapping("/{id}/bloquear")
+    public ResponseEntity<Usuario> bloquear(@PathVariable Long id) {
         try {
-            Usuario meuPerfil = usuarioService.buscarMeuPerfil(usuarioId);
-            meuPerfil.setSenha(null); // Segurança: não manda a senha pro front
-            return ResponseEntity.ok(meuPerfil);
-        } catch (Exception e) { return ResponseEntity.badRequest().body(e.getMessage()); }
+            Usuario usuarioBloqueado = usuarioService.bloquearUsuario(id);
+            return ResponseEntity.ok(usuarioBloqueado);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
-    // Atualizar própria conta
-    @PutMapping("/geral/atualizar")
-    public ResponseEntity<?> atualizarMinhaConta(@RequestHeader("X-Usuario-Id") Long id, @RequestBody Usuario dados) {
+    @PutMapping("/{id}/banir")
+    public ResponseEntity<Usuario> banir(@PathVariable Long id) {
         try {
-            Usuario salvo = usuarioService.atualizarProprioPerfil(id, dados);
-            return ResponseEntity.ok(new UsuarioPublicoDTO(salvo));
-        } catch (Exception e) { return ResponseEntity.badRequest().body(e.getMessage()); }
+            Usuario usuarioBanido = usuarioService.banirUsuario(id);
+            return ResponseEntity.ok(usuarioBanido);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
-    // --- ROTAS DE MODERAÇÃO (ADMIN) ---
-
-    @GetMapping("/admin/lista-users")
-    public ResponseEntity<?> listarTodosAdmin(@RequestHeader("X-Admin-Id") Long adminId) {
-        try { return ResponseEntity.ok(usuarioService.listarTodosParaAdmin(adminId)); }
-        catch (Exception e) { return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage()); }
+    // Buscas padrão
+    @GetMapping
+    public List<Usuario> listar() {
+        return usuarioService.listarTodos();
     }
 
-    @PutMapping("/admin/atualiza/{id}")
-    public ResponseEntity<?> editarPorAdmin(@RequestHeader("X-Admin-Id") Long adminId, @PathVariable Long id, @RequestBody Usuario dados) {
-        try { return ResponseEntity.ok(usuarioService.atualizarUsuarioPorAdmin(adminId, id, dados)); }
-        catch (Exception e) { return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage()); }
+    @GetMapping("/{id}")
+    public ResponseEntity<Usuario> buscarPorId(@PathVariable Long id) {
+        Optional<Usuario> usuario = usuarioService.buscarPorId(id);
+        return usuario.map(ResponseEntity::ok)
+                      .orElse(ResponseEntity.notFound().build());
     }
 
-    @DeleteMapping("/admin/deleta/{id}")
-    public ResponseEntity<?> deletarMembro(@RequestHeader("X-Admin-Id") Long adminId, @PathVariable Long id) {
-        try {
-            usuarioService.deletarUsuarioPorAdmin(adminId, id);
-            return ResponseEntity.ok("Usuário removido.");
-        } catch (Exception e) { return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage()); }
-    }
-    
-    // Rota de Promoção a Admin
-    @PutMapping("/admin/adicionar-adm/{id}")
-    public ResponseEntity<?> promoverParaAdmin(@RequestHeader("X-Admin-Id") Long adminId, @PathVariable Long id, @RequestBody Usuario dados) {
-        try { return ResponseEntity.ok(usuarioService.atualizarUsuarioPorAdmin(adminId, id, dados)); }
-        catch (Exception e) { return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage()); }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletar(@PathVariable Long id) {
+        if (usuarioService.buscarPorId(id).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        usuarioService.deletarUsuario(id);
+        return ResponseEntity.noContent().build();
     }
 }

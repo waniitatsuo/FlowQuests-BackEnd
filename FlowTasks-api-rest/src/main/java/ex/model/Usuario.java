@@ -12,6 +12,9 @@ import org.hibernate.annotations.CreationTimestamp;
 @Table(name = "usuario")
 public class Usuario {
 
+    public enum Perfil { USER, ADMIN }
+    public enum StatusConta { ATIVO, BLOQUEADO, BANIDO }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "usuario_id")
@@ -27,7 +30,15 @@ public class Usuario {
     private String senha;
 
     @Column(name = "xp_total")
-    private int xpTotal;
+    private int xpTotal = 0; // Já começa com 0 para evitar nulos
+    
+    @Enumerated(EnumType.STRING) // <-- Aqui está a ligação com o banco!
+    @Column(name = "perfil", nullable = false)
+    private Perfil perfil = Perfil.USER; 
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status_conta", nullable = false)
+    private StatusConta statusConta = StatusConta.ATIVO; 
     
     @CreationTimestamp
     @Column(name = "criado_em", updatable = false)
@@ -46,68 +57,47 @@ public class Usuario {
     )
     private Set<Conquista> conquistas;
     
-    public Long getId() {
-        return id;
+    // --- Construtor Padrão (Obrigatório para o Hibernate) ---
+    public Usuario() {}
+
+    // --- Getters (Podemos ler tudo sem problemas) ---
+    public Long getId() { return id; }
+    public String getNome() { return nome; }
+    public String getEmail() { return email; }
+    public String getSenha() { return senha; }
+    public int getXpTotal() { return xpTotal; }
+    public Perfil getPerfil() { return perfil; }
+    public StatusConta getStatusConta() { return statusConta; }
+    public LocalDateTime getCriadoEm() { return criadoEm; }
+    public List<Tarefa> getTarefas() { return tarefas; }
+    public Set<Conquista> getConquistas() { return conquistas; }
+
+    // --- Setters Seguros (Apenas para o que realmente pode ser alterado diretamente) ---
+    public void setNome(String nome) { this.nome = nome; }
+    public void setEmail(String email) { this.email = email; }
+    public void setSenha(String senha) { this.senha = senha; }
+
+    // --- MÉTODOS DE NEGÓCIO (Adeus setters anêmicos, olá encapsulação!) ---
+    
+    public void adicionarXp(int xp) {
+        if (xp > 0) { // Garante que ninguém vai passar XP negativo por engano
+            this.xpTotal += xp;
+        }
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void promoverParaAdmin() {
+        this.perfil = Perfil.ADMIN;
     }
 
-    public String getNome() {
-        return nome;
+    public void bloquearConta() {
+        this.statusConta = StatusConta.BLOQUEADO;
     }
 
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getSenha() {
-        return senha;
-    }
-
-    public void setSenha(String senha) {
-        this.senha = senha;
-    }
-
-    public int getXpTotal() {
-        return xpTotal;
-    }
-
-    public void setXpTotal(int xpTotal) {
-        this.xpTotal = xpTotal;
-    }
-
-    public LocalDateTime getCriadoEm() {
-        return criadoEm;
-    }
-
-    public void setCriadoEm(LocalDateTime criadoEm) {
-        this.criadoEm = criadoEm;
-    }
-
-    public List<Tarefa> getTarefas() {
-        return tarefas;
-    }
-
-    public void setTarefas(List<Tarefa> tarefas) {
-        this.tarefas = tarefas;
+    public void banirConta() {
+        this.statusConta = StatusConta.BANIDO;
     }
     
-    public Set<Conquista> getConquistas() {
-        return conquistas;
+    public void reativarConta() {
+        this.statusConta = StatusConta.ATIVO;
     }
-
-    public void setConquistas(Set<Conquista> conquistas) {
-        this.conquistas = conquistas;
-    }
-
 }

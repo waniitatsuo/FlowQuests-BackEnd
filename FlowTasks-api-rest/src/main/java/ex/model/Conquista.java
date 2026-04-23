@@ -19,15 +19,16 @@ public class Conquista {
 
     @Column(name = "icone", length = 50)
     private String icone;
+    
+    // Construtor padrão obrigatório para o JPA/Hibernate
+    public Conquista() {}
 
+    // --- Apenas Getters para o ID ---
     public Long getId() {
         return id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
+    // --- Getters e Setters para as informações editáveis ---
     public String getNome() {
         return nome;
     }

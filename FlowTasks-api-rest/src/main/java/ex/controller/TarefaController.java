@@ -18,35 +18,24 @@ public class TarefaController {
     @Autowired
     private TarefaService tarefaService;
 
-    // Endpoint: Criar Tarefa
     @PostMapping
-    public ResponseEntity<?> criarTarefa(
-            @RequestBody Tarefa tarefa, 
-            @RequestHeader("X-Usuario-Id") Long usuarioId) {
+    public ResponseEntity<?> criarTarefa(@RequestBody Tarefa tarefa, @RequestHeader("X-Usuario-Id") Long usuarioId) {
         try {
-            Tarefa novaTarefa = tarefaService.criarTarefa(tarefa, usuarioId);
-            return ResponseEntity.status(HttpStatus.CREATED).body(novaTarefa);
+            return ResponseEntity.status(HttpStatus.CREATED).body(tarefaService.criarTarefa(tarefa, usuarioId));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
-    // Endpoint: Completar a Tarefa (O "Check" do Dashboard)
     @PostMapping("/{id}/completar")
-    public ResponseEntity<?> completarTarefa(
-            @PathVariable Long id, 
-            @RequestHeader("X-Usuario-Id") Long usuarioId) {
+    public ResponseEntity<?> completarTarefa(@PathVariable Long id, @RequestHeader("X-Usuario-Id") Long usuarioId) {
         try {
-            Tarefa tarefaCompletada = tarefaService.completarTarefa(id, usuarioId);
-            return ResponseEntity.ok(tarefaCompletada);
-        } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (IllegalArgumentException e) {
+            return ResponseEntity.ok(tarefaService.completarTarefa(id, usuarioId));
+        } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
-    // Endpoint: Listar Tarefas (Com Paginação e Busca)
     @GetMapping("/usuario/{userId}")
     public ResponseEntity<?> listarTarefas(
             @PathVariable Long userId,
@@ -54,18 +43,18 @@ public class TarefaController {
             @RequestParam(defaultValue = "pendente") String estado,
             @RequestParam(defaultValue = "") String search,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size) {
+            @RequestParam(defaultValue = "10") int size) {
 
-        // Barreira de segurança: O cara logado no header só pode ver a rota do próprio ID
         if (!userId.equals(headerUserId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("Acesso Negado: Você só pode ver suas próprias tarefas.");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Acesso Negado.");
         }
 
         try {
             Pageable pageable = PageRequest.of(page, size);
             Page<Tarefa> tarefas = tarefaService.listarTarefasDoUsuario(userId, estado, search, pageable);
-            return ResponseEntity.ok(tarefas);
+            
+            // CORREÇÃO: .getContent() extrai apenas a lista (Array) de dentro da Página!
+            return ResponseEntity.ok(tarefas.getContent()); 
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

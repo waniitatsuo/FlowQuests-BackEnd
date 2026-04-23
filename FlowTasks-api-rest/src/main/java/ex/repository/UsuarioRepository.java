@@ -1,4 +1,4 @@
-package ex.model.repository;
+package ex.repository;
 
 import ex.model.Usuario;
 
