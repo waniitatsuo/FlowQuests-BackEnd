@@ -1,13 +1,10 @@
 package ex.controller;
 
 import ex.model.Conquista;
-import ex.model.repository.ConquistaRepository;
+import ex.service.ConquistaService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
@@ -16,11 +13,23 @@ import java.util.List;
 public class ConquistaController {
 
     @Autowired
-    private ConquistaRepository repository;
-    
-    // Endpoint para listar todas as conquistas possíveis
+    private ConquistaService conquistaService;
+
+    // Endpoint: Listar todas as conquistas (Usado pelo seu dashboard)
     @GetMapping
-    public List<Conquista> listar() {
-        return repository.findAll();
+    public ResponseEntity<List<Conquista>> listarTudo(@RequestHeader(value = "X-Usuario-Id", required = false) Long usuarioId) {
+        // Se passarmos o ID, podemos aproveitar para rodar a verificação antes de mostrar
+        if (usuarioId != null) {
+            conquistaService.verificarEDesignarConquistas(usuarioId);
+        }
+        
+        List<Conquista> lista = conquistaService.listarTodas();
+        return ResponseEntity.ok(lista);
+    }
+
+    // Endpoint: Criar nova conquista (Protegido por lógica de Admin se desejar)
+    @PostMapping
+    public ResponseEntity<Conquista> salvar(@RequestBody Conquista conquista) {
+        return ResponseEntity.ok(conquistaService.criarConquista(conquista));
     }
 }
