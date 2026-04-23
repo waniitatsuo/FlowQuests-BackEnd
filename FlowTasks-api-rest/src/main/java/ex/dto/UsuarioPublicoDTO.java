@@ -1,25 +1,12 @@
 package ex.dto;
 
 import ex.model.Usuario;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 
-@Getter
-@NoArgsConstructor
-public class UsuarioPublicoDTO {
+// Usando o poder supremo do "record" para ser imutável!
+public record UsuarioPublicoDTO(Long id, String nome, int xpTotal, String perfil) {
     
-    private Long id;
-    private String nome;
-    private String email;
-    private int xpTotal;
-    private String perfil;
-
-    // Construtor que converte a Entidade (Usuario) para o DTO automaticamente
+    // Construtor mágico que converte a entidade gorda na bandeja limpinha
     public UsuarioPublicoDTO(Usuario usuario) {
-        this.id = usuario.getId();
-        this.nome = usuario.getNome();
-        this.email = usuario.getEmail();
-        this.xpTotal = usuario.getXpTotal();
-        this.perfil = usuario.getPerfil().name();
+        this(usuario.getId(), usuario.getNome(), usuario.getXpTotal(), usuario.getPerfil().name());
     }
 }

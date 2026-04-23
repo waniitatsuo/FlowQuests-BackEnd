@@ -1,19 +1,12 @@
 package ex.dto;
 
 import ex.model.Usuario;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 
-@Getter
-@NoArgsConstructor
-public class UsuarioRankingDTO {
+// O "record" já cria tudo imutável automaticamente!
+public record UsuarioRankingDTO(String nome, int xpTotal) {
     
-    private String nome;
-    private int xpTotal;
-
-    // Construtor para transformar o usuário da busca em um competidor do ranking
+    // Construtor que facilita a conversão
     public UsuarioRankingDTO(Usuario usuario) {
-        this.nome = usuario.getNome();
-        this.xpTotal = usuario.getXpTotal();
+        this(usuario.getNome(), usuario.getXpTotal());
     }
 }

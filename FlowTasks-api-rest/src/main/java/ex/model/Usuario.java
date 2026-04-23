@@ -56,6 +56,10 @@ public class Usuario {
       inverseJoinColumns = @JoinColumn(name = "conquista_id")
     )
     private Set<Conquista> conquistas;
+
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<Advertencia> advertencias;
     
     // --- Construtor Padrão (Obrigatório para o Hibernate) ---
     public Usuario() {}
@@ -71,6 +75,7 @@ public class Usuario {
     public LocalDateTime getCriadoEm() { return criadoEm; }
     public List<Tarefa> getTarefas() { return tarefas; }
     public Set<Conquista> getConquistas() { return conquistas; }
+    public List<Advertencia> getAdvertencias() { return advertencias; }
 
     // --- Setters Seguros (Apenas para o que realmente pode ser alterado diretamente) ---
     public void setNome(String nome) { this.nome = nome; }
