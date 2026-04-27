@@ -46,6 +46,30 @@ public class UsuarioService {
         return repository.save(novoAdmin);
     }
 
+    // Caso de Uso: Promover um usuário existente para ADMINISTRADOR
+    public Usuario promoverUsuario(Long adminLogadoId, Long usuarioAlvoId) {
+
+        // 1. Reutilizamos sua lógica de segurança: Verifica se quem solicita é ADMIN
+        Usuario adminLogado = repository.findById(adminLogadoId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário solicitante não encontrado."));
+
+        if (adminLogado.getPerfil() != Usuario.Perfil.ADMIN) {
+            throw new SecurityException("Acesso negado. Apenas administradores podem promover outros usuários.");
+        }
+
+        // 2. Busca o usuário que será promovido
+        Usuario usuarioAlvo = repository.findById(usuarioAlvoId)
+                .orElseThrow(() -> new IllegalArgumentException("Aventureiro alvo não encontrado."));
+
+        // 3. Aplica a promoção (usando o seu método interno do modelo)
+        usuarioAlvo.setPerfil(Usuario.Perfil.ADMIN);
+        // Se o seu método no modelo for exatamente 'promoverParaAdmin()', use:
+        // usuarioAlvo.promoverParaAdmin();
+
+        // 4. Salva a alteração no banco
+        return repository.save(usuarioAlvo);
+    }
+
     // 3. Caso de Uso: Fazer Login
     public Usuario realizarLogin(String email, String senha) {
         Optional<Usuario> usuarioOptional = repository.findByEmail(email);

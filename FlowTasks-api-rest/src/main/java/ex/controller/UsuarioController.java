@@ -110,7 +110,7 @@ public class UsuarioController {
     }
 
     // Endpoint: Retorna a lista completa de usuários para o painel Admin
-    @GetMapping("/admin")
+    @GetMapping("/admin/lista-users")
     public ResponseEntity<?> listarTodosAdmin(@RequestHeader("X-Admin-Id") Long adminId) {
         try {
             // Pega a lista completa da cozinha
@@ -247,6 +247,23 @@ public class UsuarioController {
             
         } catch (IllegalArgumentException e) {
             // 400 Bad Request - ID do admin ou do alvo não existe
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // Endpoint para Promover um usuário que já existe
+    @PutMapping("/admin/promover/{id}")
+    public ResponseEntity<?> promoverParaAdmin(
+            @RequestHeader("X-Admin-Id") Long adminId,
+            @PathVariable Long id) { // Pega o ID de quem vai ser promovido pela URL
+
+        try {
+            // Seu service vai buscar esse ID no banco e mudar o perfil dele para ADMIN
+            Usuario promovido = usuarioService.promoverUsuario(adminId, id);
+            return ResponseEntity.ok(promovido);
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
