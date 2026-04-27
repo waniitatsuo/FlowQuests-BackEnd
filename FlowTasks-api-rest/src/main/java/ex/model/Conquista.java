@@ -19,6 +19,8 @@ public class Conquista {
 
     @Column(name = "icone", length = 50)
     private String icone;
+
+    private int xpNecessario;
     
     // Construtor padrão obrigatório para o JPA/Hibernate
     public Conquista() {}
@@ -52,4 +54,6 @@ public class Conquista {
     public void setIcone(String icone) {
         this.icone = icone;
     }
+
+    public int getXpNecessario() { return xpNecessario; }
 }

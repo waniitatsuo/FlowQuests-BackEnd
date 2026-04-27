@@ -128,14 +128,14 @@ public class UsuarioService {
 
     // Caso de Uso: Listar todos os usuários (Exclusivo para Administradores)
     public List<Usuario> listarTodosParaAdmin(Long adminId) {
-        
+
         Usuario admin = repository.findById(adminId)
                 .orElseThrow(() -> new IllegalArgumentException("Administrador não encontrado."));
 
         if (admin.getPerfil() != Usuario.Perfil.ADMIN) {
             throw new SecurityException("Acesso Negado. Apenas administradores podem ver a lista completa.");
         }
-        
+
         return repository.findAll();
     }
 
@@ -230,6 +230,11 @@ public class UsuarioService {
             // Pega a senha nova, passa no triturador (encode) e salva o hash!
             String senhaCriptografada = passwordEncoder.encode(dadosAtualizados.getSenha());
             alvo.setSenha(senhaCriptografada);
+        }
+
+        // Se o admin enviou um perfil novo, atualiza!
+        if (dadosAtualizados.getPerfil() != null) {
+            alvo.setPerfil(dadosAtualizados.getPerfil());
         }
 
         return repository.save(alvo);

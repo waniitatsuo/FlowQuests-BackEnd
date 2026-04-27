@@ -4,6 +4,7 @@ import ex.model.Tarefa;
 import ex.model.Usuario;
 import ex.service.TarefaService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -57,5 +58,23 @@ public class TarefaController {
         }
         tarefaService.deletarTarefa(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("usuario/{Id}")
+    public ResponseEntity<?> listarTarefas(
+            @PathVariable("Id") Long userId,
+            @RequestParam(defaultValue = "pendente") Tarefa.Estado estado,
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) { // O Node pede size=5
+
+        // 1. Prepara a página
+        PageRequest pageable = PageRequest.of(page, size);
+
+        // 2. Manda a cozinha (Service) trabalhar!
+        var tarefas = tarefaService.listarPorUsuarioPaginado(userId, estado, search, pageable);
+
+        // 3. O .getContent() pega só a lista limpa e entrega pro Node.js!
+        return ResponseEntity.ok(tarefas);
     }
 }

@@ -22,11 +22,16 @@ public class UsuarioController {
     @Autowired
     private UsuarioService usuarioService;
 
-    // Caso de Uso: Se Registrar
-    @PostMapping
-    public ResponseEntity<Usuario> criar(@RequestBody Usuario novoUsuario) {
-        Usuario usuarioSalvo = usuarioService.registrarUsuario(novoUsuario);
-        return ResponseEntity.status(HttpStatus.CREATED).body(usuarioSalvo);
+    // Endpoint: Criar conta (Público)
+    @PostMapping("/registrar")
+    public ResponseEntity<?> registrarUsuario(@RequestBody Usuario novoUsuario) {
+        try {
+            // O Service vai cuidar de criptografar a senha e setar o perfil como USER
+            Usuario usuarioSalvo = usuarioService.registrarUsuario(novoUsuario);
+            return ResponseEntity.status(HttpStatus.CREATED).body(new UsuarioPublicoDTO(usuarioSalvo));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     // Endpoint para Criar um Novo Administrador do zero
@@ -86,22 +91,6 @@ public class UsuarioController {
         }
     }
 
-    // Endpoint para o usuário atualizar o PRÓPRIO perfil
-    @PutMapping("/geral/atualizar")
-    public ResponseEntity<?> atualizarMeuPerfil(
-            @RequestHeader("X-Usuario-Id") Long usuarioId,
-            @RequestBody Usuario dadosAtualizados) {
-        try {
-            Usuario usuarioSalvo = usuarioService.atualizarUsuario(usuarioId, dadosAtualizados);
-            
-            // Devolvemos o DTO limpinho para não vazar a senha nova!
-            return ResponseEntity.ok(new UsuarioPublicoDTO(usuarioSalvo));
-            
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
     // Buscas padrão
     // Endpoint para Listar Todos (Protegido - Só Usuários Cadastrados recebem o DTO limpo)
     @GetMapping("/geral")
@@ -126,10 +115,10 @@ public class UsuarioController {
         try {
             // Pega a lista completa da cozinha
             List<Usuario> listaCompleta = usuarioService.listarTodosParaAdmin(adminId);
-            
+
             // Devolve pro Node.js
             return ResponseEntity.ok(listaCompleta);
-            
+
         } catch (SecurityException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (IllegalArgumentException e) {
@@ -262,24 +251,6 @@ public class UsuarioController {
         }
     }
 
-    // Endpoint: Admin altera dados de um membro
-    @PutMapping("/admin/{id}")
-    public ResponseEntity<?> editarMembroPorAdmin(
-            @RequestHeader("X-Admin-Id") Long adminId, // O seu ID de chefe vai aqui
-            @PathVariable Long id,                     // O ID da "vítima" vai na URL
-            @RequestBody Usuario dadosAtualizados) {   // Os dados novos vão no Body
-        try {
-            Usuario usuarioAtualizado = usuarioService.atualizarUsuarioPorAdmin(adminId, id, dadosAtualizados);
-            return ResponseEntity.ok(usuarioAtualizado);
-            
-        } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-            
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
     // Endpoint: Membro altera os PRÓPRIOS dados
     @PutMapping("/geral/atualizar")
     public ResponseEntity<?> atualizarMinhaConta(
@@ -303,11 +274,11 @@ public class UsuarioController {
     public ResponseEntity<?> carregarMeuPerfil(@RequestHeader("X-Usuario-Id") Long usuarioId) {
         try {
             Usuario meuPerfil = usuarioService.buscarMeuPerfil(usuarioId);
-            
-            // DICA DE OURO: Para a senha não ir para o Node.js de bobeira, 
+
+            // DICA DE OURO: Para a senha não ir para o Node.js de bobeira,
             // a gente limpa ela do objeto só nessa resposta (não apaga do banco)
-            meuPerfil.setSenha(null); 
-            
+            meuPerfil.setSenha(null);
+
             return ResponseEntity.ok(meuPerfil);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

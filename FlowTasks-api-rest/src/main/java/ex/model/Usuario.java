@@ -60,7 +60,8 @@ public class Usuario {
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<Advertencia> advertencias;
-    
+
+
     // --- Construtor Padrão (Obrigatório para o Hibernate) ---
     public Usuario() {}
 
@@ -81,6 +82,7 @@ public class Usuario {
     public void setNome(String nome) { this.nome = nome; }
     public void setEmail(String email) { this.email = email; }
     public void setSenha(String senha) { this.senha = senha; }
+    public void setPerfil(Perfil perfil) { this.perfil = perfil; }
 
     // --- MÉTODOS DE NEGÓCIO (Adeus setters anêmicos, olá encapsulação!) ---
     
